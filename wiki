@@ -1,1 +1,52 @@
-test
+
+https://www.jianshu.com/p/ffe35b73be45
+https://blog.csdn.net/xiatiandefeiyu/article/details/78593247
+
+最近逛github，突然发现facebook居然写了个检测网络质量的框架源码地址，好奇心驱使那就研究一下吧。分析源码之前，先看一看官方给我们提供的例子效果：
+这个是faceBook官方为这个小框架提供的demo，点击Test按钮即可测出当前手机网络速度的质量，但是这里出现了一串英文EXCELLENT，什么鬼这表示的速度是什么，查询源码找到包含参数的这个枚举类
+
+public enum ConnectionQuality {
+  /**
+   * Bandwidth under 150 kbps.
+   */
+  POOR,
+  /**
+   * Bandwidth between 150 and 550 kbps.
+   */
+  MODERATE,
+  /**
+   * Bandwidth between 550 and 2000 kbps.
+   */
+  GOOD,
+  /**
+   * EXCELLENT - Bandwidth over 2000 kbps.
+   */
+  EXCELLENT,
+  /**
+   * Placeholder for unknown bandwidth. This is the initial value and will stay at this value
+   * if a bandwidth cannot be accurately found.
+   */
+  UNKNOWN
+}
+
+英文已经说明的很清楚了，测试的当前网络速度2000 kbps以上，说明手机当前网络质量不错吆！好，看完例子，接下来进入重点 
+    mConnectionClassManager = ConnectionClassManager.getInstance();
+    mDeviceBandwidthSampler = DeviceBandwidthSampler.getInstance();
+   .....
+    mListener = new ConnectionChangedListener();
+    
+    @Override
+  protected void onPause() {
+    super.onPause();
+    mConnectionClassManager.remove(mListener);
+  }
+
+  @Override
+  protected void onResume() {
+    super.onResume();
+    mConnectionClassManager.register(mListener);
+  }
+
+例子当中与框架交互的首先映入眼帘的就是这几句代码，可以看到，小框架中声明了两个单例ConnectionClassManager类和DeviceBandwidthSampler类，然后通过ConnectionClassManager注册了一个监听回调方法，用于显示网络变化，既然是一直在监听网络速度变化的，那么八成会有死循环一直运行监测网速。ok，先看看DeviceBandwidthSampler类，验证一下推论。
+
+
